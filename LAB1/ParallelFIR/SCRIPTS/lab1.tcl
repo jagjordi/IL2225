@@ -2,7 +2,7 @@ source ../../global_scripts/analyze_elaborate.tcl
 source synopsys_dc.setup
 
 # load all the vhdl files
-analyze_elaborate myPackage [list ArithUnit coefRom FSM MAC misc ShiftRegister] Top_Parallel_FIR structural
+analyze_elaborate [list myPackage misc] [list ArithUnit coefRom FSM MAC ShiftRegister] Top_Parallel_FIR structural
 
 # set wireload model and mode
 set_wire_load_mode top
@@ -13,7 +13,7 @@ set_operating_conditions "NCCOM"
 
 
 # clock model
-create_clock -name clk -period 2.5 -waveform {0 1.25} {clk}
+create_clock -name clk -period 5 -waveform {0 2.5} {clk}
 
 # set reset paths as false
 set_false_path -from [get_ports rst_n]
