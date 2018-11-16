@@ -11,8 +11,8 @@ entity delay_line is
        w_addr: in std_logic_vector (addr_width-1 downto 0);--write address
        w_en: std_logic;
        sample_in: in signed (width-1 downto 0);
-       r_addr1: in std_logic_vector (addr_width-1 downto 0);--read address
-       sample_out1: out signed (width-1 downto 0));
+       r_addr1, r_addr2: in std_logic_vector (addr_width-1 downto 0);--read address
+       sample_out1, sample_out2: out signed (width-1 downto 0));
 end delay_line;
 
 Architecture behavior of delay_line is 
@@ -31,5 +31,6 @@ begin
       end if;
   end process;
   sample_out1 <= data (conv_integer(unsigned(r_addr1)));
+  sample_out2 <= data (conv_integer(unsigned(r_addr2)));
 end behavior;
 

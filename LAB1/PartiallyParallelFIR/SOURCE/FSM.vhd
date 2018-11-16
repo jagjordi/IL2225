@@ -8,7 +8,7 @@ use work.types_consts.all;
 entity FSM is
 	port(
 		rst_n		  	 :in  std_logic;
-		clk			  	 :in  std_logic;
+		clk			 :in  std_logic;
 		sample_clk	  	 :in  std_logic;
 		delayLineWrEn		 :out std_logic;
 		delayLineAdr	 :out std_logic_vector(addr_width-1 downto 0);
@@ -16,7 +16,8 @@ entity FSM is
 		delayLineR2   	 :out std_logic_vector(addr_width-1 downto 0);-- to be added for partially parallel FIR filter
 		dav			  	 :out std_logic;
 		rst_mac_n		 :out std_logic;
-		coeffAdr		 :out std_logic_vector(addr_width-1 downto 0));
+		coeffAdr		 :out std_logic_vector(addr_width-1 downto 0);
+		ctrl_sig : out std_logic);
 end FSM;
 
 architecture behavioral of FSM is
@@ -63,19 +64,33 @@ begin
         elsif rising_edge (clk) then
 		  if sample_clk = '1' then  
 		       	adrR1 <= wrAdr;
-		       	adrR2 <= ;
+			if wrAdr = max_tap then
+				adrR2 <= "0000";
+			else
+                adrR2 <= wrAdr + '1';
+			end if;
 		  else
-		        
 				if adrR1 = ("0000") then
 					adrR1 <= max_tap;
 				else
 					adrR1 <= adrR1 - '1';
 				end if;
-                --adrR2 <=;
+
+				if adrR2 = max_tap then
+					adrR2 <= (others => '0');
+				else 
+					adrR2 <= adrR2 + '1';
+				end if;
+				
+                if adrR1 = adrR2 then 
+			ctrl_sig <= '1'; 
+
+		else 
+			ctrl_sig <= '0'; 
+		end if;
          end if;
         end if;
 	end process read_adr_process;
-	
 	
 	reg_state_process:process(clk,rst_n)                     
 	begin                           
@@ -85,7 +100,6 @@ begin
 			present_state <= next_state;
 		end if;
 	end process reg_state_process;
-	
 	
 	logic_process:process(present_state,sample_clk,count)
 	begin
@@ -104,15 +118,13 @@ begin
 					next_state <= CALC;
 				end if;
 			when CALC =>
-			  if count = "1101" then
+			  if count = "0111" then
 					next_state <= READY;
 				elsif count = ("0000") then 
 				coeffAdr <= (others =>'0');
 				else
 			    	coeffAdr <= count - '1'; 
 			    end if;
-
-
 			when READY =>
 				dav <= '1';
 				next_state <= IDLE;
