@@ -1,4 +1,4 @@
-source ../../global_scripts/analyze_elaborate.tcl
+source /home/j/o/jordiag/IL2225/global_scripts/my_utils.tcl
 source synopsys_dc.setup
 
 # load all the vhdl files
@@ -37,4 +37,4 @@ puts "Sequential cells: $sq_cells"
 set cp [get_timing_paths -nworst 1 -max_paths 1 -delay_type max -include_hierarchical_pins]
 puts "Critical path startpoint: [get_attribute [get_attribute $cp startpoint] full_name]"
 puts "Critical path endpoint: [get_attribute [get_attribute $cp endpoint] full_name]"
-exit
+

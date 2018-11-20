@@ -22,11 +22,12 @@ PORT (sample_in: in signed (width-1 downto 0);
       result: out signed (result_width-1 downto 0));
 END component;
 signal tmp_result1, tmp_result2, MAC_result1, MAC_result2: signed (result_width-1 downto 0);
+signal sample2_mux : signed (width-1 downto 0);
 begin
 
 MAC1: MAC port map  (sample1, coeff, tmp_result1, MAC_result1);
-MAC2: MAC port map  (sample2, coeff, tmp_result2, MAC_result2);-- to be added for partially parallel FIR 
-
+MAC2: MAC port map  (sample2_mux, coeff, tmp_result2, MAC_result2);
+sample2_mux <= sample2 when ctrl_sig = '0' else (others=>'0');
 process (clk, rst_n,rst_mac_n)
    begin
      if rst_mac_n='0' or rst_n='0' then 

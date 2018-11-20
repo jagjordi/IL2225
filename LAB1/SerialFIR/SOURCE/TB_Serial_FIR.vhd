@@ -23,8 +23,8 @@ begin
   clk <= not clk after 10 ns;
   rst_n <= '1' after 5 ns;
   -- sample_clk <= '1' , '0' after 20 ns, '1' after 300ns, '0' after 320 ns;
-  sample <= "0000000001", "0000000000" after 340 ns;
-  clk2 <= not clk2 after 300 ns;
+  sample <= "0000000001", "0000000000" after 440 ns;
+  clk2 <= not clk2 after 400 ns;
   clk3 <= transport clk2 after 20 ns;
   sample_clk <= clk2 xor clk3;
 end behavior;

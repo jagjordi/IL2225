@@ -23,7 +23,7 @@ architecture behavioral of FSM is
 	type state_type is (IDLE,CALC,READY);
 	signal present_state,next_state	:state_type;
 	signal count :std_logic_vector(addr_width-1 downto 0);
-	signal rst_counter_n:std_logic:='0';
+	signal rst_counter_n, rst_counter_n_sync:std_logic:='0';
 	signal wrAdr :std_logic_vector(addr_width-1 downto 0);
 	signal delayLineWrEnTemp :std_logic;
 	signal adrR1:std_logic_vector(addr_width-1 downto 0);
@@ -99,7 +99,7 @@ begin
 				rst_counter_n <= '0';
 				coeffAdr <= (others => '0'); 
 				if sample_clk = '1' then
-					rst_counter_n <= '1';
+                    rst_counter_n <= '1';
 					delayLineWrEnTemp <= '1';
 					next_state <= CALC;
 				end if;
@@ -118,8 +118,14 @@ begin
 				next_state <= IDLE;
 		end case; 
 	end process logic_process;
-	
-    rst_mac_n <= rst_counter_n;
+
+    mac_rst_sync:process(clk)
+    begin
+        if rising_edge(clk) then
+            rst_counter_n_sync <= rst_counter_n;
+        end if;
+    end process;    
+    	rst_mac_n <= rst_counter_n_sync;
 	delayLineAdr <= wrAdr;
 	delayLineWrEn <= delayLineWrEnTemp; 
 	delayLineR1 <= adrR1;

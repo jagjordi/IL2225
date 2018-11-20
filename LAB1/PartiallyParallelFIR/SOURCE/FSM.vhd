@@ -24,7 +24,7 @@ architecture behavioral of FSM is
 	type state_type is (IDLE,CALC,READY);
 	signal present_state,next_state	:state_type;
 	signal count :std_logic_vector(addr_width-1 downto 0);
-	signal rst_counter_n:std_logic:='0';
+	signal rst_counter_n, rst_counter_n_sync:std_logic:='0';
 	signal wrAdr :std_logic_vector(addr_width-1 downto 0);
 	signal delayLineWrEnTemp :std_logic;
 	signal adrR1:std_logic_vector(addr_width-1 downto 0);
@@ -82,16 +82,10 @@ begin
 					adrR2 <= adrR2 + '1';
 				end if;
 				
-                if adrR1 = adrR2 then 
-			ctrl_sig <= '1'; 
-
-		else 
-			ctrl_sig <= '0'; 
-		end if;
          end if;
         end if;
 	end process read_adr_process;
-	
+    ctrl_sig <= '1' when adrR2 = adrR1 else '0';	
 	reg_state_process:process(clk,rst_n)                     
 	begin                           
 		if rst_n = '0' then 
@@ -118,10 +112,11 @@ begin
 					next_state <= CALC;
 				end if;
 			when CALC =>
-			  if count = "0111" then
+                if count = "0111" then
 					next_state <= READY;
-				elsif count = ("0000") then 
-				coeffAdr <= (others =>'0');
+                end if;
+				if count = ("0000") then 
+                    coeffAdr <= (others =>'0');
 				else
 			    	coeffAdr <= count - '1'; 
 			    end if;
@@ -130,8 +125,15 @@ begin
 				next_state <= IDLE;
 		end case; 
 	end process logic_process;
+
+    reset_mac_sync: process(clk)
+    begin
+        if rising_edge(clk) then
+            rst_counter_n_sync <= rst_counter_n;
+        end if;
+    end process;
 	
-    rst_mac_n <= rst_counter_n;
+    rst_mac_n <= rst_counter_n_sync;
 	delayLineAdr <= wrAdr;
 	delayLineWrEn <= delayLineWrEnTemp; 
 	delayLineR1 <= adrR1;
