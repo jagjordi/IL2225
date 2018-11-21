@@ -10,7 +10,7 @@ entity FSM is
         rst_n            :in  std_logic;
         clk              :in  std_logic;
         sample_clk       :in  std_logic;
-        delayLineWrE     :out std_logic;
+        delayLineWrEn    :out std_logic;
         delayLineAdr     :out std_logic_vector(addr_width-1 downto 0);
         delayLineR1      :out std_logic_vector(addr_width-1 downto 0);
         delayLineR2      :out std_logic_vector(addr_width-1 downto 0);-- to be added for partially parallel FIR filter
@@ -35,76 +35,20 @@ begin
     delay_line_process:process(rst_n,clk)
     begin
         if rst_n = '0' then
-            wrAdr <= (others =>'0');
         elsif rising_edge (clk) then
             if sample_clk = '1' then
-                if wrAdr = max_tap then
-                    wrAdr <= (others => '0');
-                else
-                    wrAdr <= wrAdr + '1' ;
-                end if;
             end if;
         end if;
     end process delay_line_process;
 
-    counter_process:process(rst_counter_n,clk)
-    begin
-        if rst_counter_n = '0' then 
-            count <= (others => '0');
-        elsif rising_edge (clk) then
-            count <= count + '1';
-        end if;
-    end process counter_process;
-    
-    read_adr_process:process(clk) -- To be completed for partially parallel FIR filter
-    begin
-        if rst_n='0' then 
-          adrR1 <= (others => '0');
-          adrR2 <= (others => '0');      
-        elsif rising_edge (clk) then
-          if sample_clk = '1' then  
-                adrR1 <= wrAdr;
-            if wrAdr = max_tap then
-                adrR2 <= "0000";
-            else
-                adrR2 <= wrAdr + '1';
-            end if;
-          else
-                if adrR1 = ("0000") then
-                    adrR1 <= max_tap;
-                else
-                    adrR1 <= adrR1 - '1';
-                end if;
-
-                if adrR2 = max_tap then
-                    adrR2 <= (others => '0');
-                else 
-                    adrR2 <= adrR2 + '1';
-                end if;
-                
-                if adrR1 = adrR2 then 
-            ctrl_sig <= '1'; 
-
-        else 
-            ctrl_sig <= '0'; 
-        end if;
-         end if;
-        end if;
-    end process read_adr_process;
-    
-    reg_state_process:process(clk,rst_n)                     
-    begin                           
-        if rst_n = '0' then 
-            present_state <= IDLE;
-        elsif rising_edge (clk) then
-            present_state <= next_state;
-        end if;
-    end process reg_state_process;
-    
     fsm_process:process(clk, rst_n)
     begin
         if rst_n = '0' then
             present_state <= IDLE;
+            adrR1 <= (others => '0');
+            adrR2 <= (others => '0');      
+            wrAdr <= (others => '0');
+            count <= (others => '0');
         elsif rising_edge(clk) then
             case present_state is
                 when IDLE =>
@@ -115,19 +59,55 @@ begin
                     if sample_clk = '1' then
                         rst_counter_n <= '1';
                         delayLineWrEnTemp <= '1';
+
+                        if wrAdr = max_tap then
+                            wrAdr <= (others => '0');
+                        else
+                            wrAdr <= wrAdr + '1' ;
+                        end if;
+
+                        adrR1 <= wrAdr;
+                        if wrAdr = max_tap then
+                            adrR2 <= "0000";
+                        else
+                            adrR2 <= wrAdr + '1';
+                        end if;
                         present_state <= CALC;
                     end if;
                 when CALC =>
+                    delayLineWrEnTemp <= '0';
+
+                    count <= count + '1';
                     if count = "0111" then
                         present_state <= READY;
                     end if;
+
                     if count = "0000" then 
                         coeffAdr <= (others=>'0');
                     else
                         coeffAdr <= count - '1';
                     end if;
+                    if adrR1 = "0000" then
+                        adrR1 <= max_tap;
+                    else
+                        adrR1 <= adrR1 - '1';
+                    end if;
+
+                    if adrR2 = max_tap then
+                        adrR2 <= (others => '0');
+                    else 
+                        adrR2 <= adrR2 + '1';
+                    end if;
+                    
+                    if adrR1 = adrR2 then 
+                        ctrl_sig <= '1'; 
+                    else 
+                        ctrl_sig <= '0'; 
+                    end if;
                 when READY =>
                     present_state <= IDLE;
+                    count <= (others => '0');
+                    dav <= '1';
             end case;
         end if;
     end process;
