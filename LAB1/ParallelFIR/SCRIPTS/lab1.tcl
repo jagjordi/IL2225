@@ -1,4 +1,4 @@
-source ../../global_scripts/analyze_elaborate.tcl
+source /home/j/o/jordiag/IL2225/global_scripts/my_utils.tcl
 source synopsys_dc.setup
 
 # load all the vhdl files
