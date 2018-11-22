@@ -20,7 +20,7 @@ signal data:sample_file;
 signal i: integer;
 
 begin
-  process (rst_n,clk,sample_in)
+  process (rst_n,clk)
     begin
       if rst_n='0' then
         data <= (others =>(others => '0'));

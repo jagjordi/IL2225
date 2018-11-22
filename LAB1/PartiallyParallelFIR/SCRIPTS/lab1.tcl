@@ -14,7 +14,7 @@ set_operating_conditions -lib tcbn90gtc NCCOM
 
 
 # clock model
-create_clock -name clk -period 20 -waveform {0 10} {clk}
+create_clock -name clk -period 5 -waveform {0 2.5} {clk}
 
 # set reset paths as false
 set_false_path -from {rst_n} -hold

@@ -21,7 +21,7 @@ signal dav: std_logic;
 begin
   P1: Top_PartiallyParallel_FIR  port map(clk,rst_n,sample_clk,sample,conv_sum,dav);
   clk <= not clk after 10 ns;
-  rst_n <= '1' after 5 ns;
+  rst_n <= '1' after 100 ns;
   --sample_clk <= '1' , '0' after 20 ns, '1' after 300ns, '0' after 320 ns, '1' after 600ns, '0' after 620 ns, '1' after 900ns, '0' after 920 ns, '1' after 1200ns, '0' after 1220 ns;
   sample_clk <= dclk2 xor dclk1;
   dclk1 <= not dclk1 after 300 ns;

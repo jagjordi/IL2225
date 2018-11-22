@@ -17,104 +17,91 @@ entity FSM is
         dav              :out std_logic;
         rst_mac_n        :out std_logic;
         coeffAdr         :out std_logic_vector(addr_width-1 downto 0);
-        ctrl_sig : out std_logic);
+        ctrl_sig         :out std_logic);
 end FSM;
 
 architecture behavioral of FSM is
-    type state_type is (IDLE,CALC,READY);
-    signal present_state :state_type;
-    signal count :std_logic_vector(addr_width-1 downto 0);
-    signal rst_counter_n:std_logic:='0';
-    signal wrAdr :std_logic_vector(addr_width-1 downto 0);
-    signal delayLineWrEnTemp :std_logic;
-    signal adrR1:std_logic_vector(addr_width-1 downto 0);
-    signal adrR2:std_logic_vector(addr_width-1 downto 0);-- to be added for partially parallel FIR filter
-    signal counter_step:std_logic_vector (addr_width-1 downto 0):="0001";
+    type state_type is (IDLE,READ,CALC,READY);
+    signal state : state_type;
+    signal count, delayLineR1Sig, delayLineR2Sig, delayLineAdrSig, coeffAdrSig :std_logic_vector(addr_width-1 downto 0);
+    signal wrEnSig, rstSig : std_logic;
 begin
-  
-    delay_line_process:process(rst_n,clk)
-    begin
-        if rst_n = '0' then
-        elsif rising_edge (clk) then
-            if sample_clk = '1' then
-            end if;
-        end if;
-    end process delay_line_process;
-
     fsm_process:process(clk, rst_n)
     begin
         if rst_n = '0' then
-            present_state <= IDLE;
-            adrR1 <= (others => '0');
-            adrR2 <= (others => '0');      
-            wrAdr <= (others => '0');
+            state <= IDLE;
+            delayLineR1Sig <= (others => '0');
+            delayLineR2Sig <= (others => '0');      
+            delayLineAdrSig <= (others => '0');
             count <= (others => '0');
         elsif rising_edge(clk) then
-            case present_state is
+            case state is
                 when IDLE =>
-                    rst_counter_n <= '0';
-                    coeffAdr <= (others=>'0');
+                    rstSig <= '0';
+                    coeffAdrSig <= (others=>'0');
                     dav <= '0';
-                    delayLineWrEnTemp <= '0';
+                    wrEnSig <= '0';
                     if sample_clk = '1' then
-                        rst_counter_n <= '1';
-                        delayLineWrEnTemp <= '1';
-
-                        if wrAdr = max_tap then
-                            wrAdr <= (others => '0');
-                        else
-                            wrAdr <= wrAdr + '1' ;
-                        end if;
-
-                        adrR1 <= wrAdr;
-                        if wrAdr = max_tap then
-                            adrR2 <= "0000";
-                        else
-                            adrR2 <= wrAdr + '1';
-                        end if;
-                        present_state <= CALC;
+                        wrEnSig <= '1';
+                        state <= READ;
                     end if;
-                when CALC =>
-                    delayLineWrEnTemp <= '0';
-
-                    count <= count + '1';
-                    if count = "0111" then
-                        present_state <= READY;
-                    end if;
-
-                    if count = "0000" then 
-                        coeffAdr <= (others=>'0');
+                when READ =>
+                    wrEnSig <= '0';
+                    rstSig <= '1';
+                    state <= CALC;
+                    coeffAdrSig <= (others=>'0');
+                    
+                    delayLineR1Sig <= delayLineAdrSig;
+                    if delayLineAdrSig = "0000" then
+                        delayLineR2Sig <= max_tap;
                     else
-                        coeffAdr <= count - '1';
-                    end if;
-                    if adrR1 = "0000" then
-                        adrR1 <= max_tap;
-                    else
-                        adrR1 <= adrR1 - '1';
-                    end if;
-
-                    if adrR2 = max_tap then
-                        adrR2 <= (others => '0');
-                    else 
-                        adrR2 <= adrR2 + '1';
+                        delayLineR2Sig <= delayLineAdrSig - '1';
                     end if;
                     
-                    if adrR1 = adrR2 then 
-                        ctrl_sig <= '1'; 
+                    if delayLineAdrSig = "0000" then
+                        delayLineAdrSig <= max_tap;
+                    else
+                        delayLineAdrSig <= delayLineAdrSig - '1';
+                    end if;
+                when CALC =>
+                    wrEnSig <= '0';
+
+                    if delayLineR1Sig = max_tap then
+                        delayLineR1Sig <= (others=>'0');
+                    else
+                        delayLineR1Sig <= delayLineR1Sig + '1';
+                    end if;
+                    if delayLineR2Sig = "0000" then
+                        delayLineR2Sig <= max_tap;
                     else 
-                        ctrl_sig <= '0'; 
+                        delayLineR2Sig <= delayLineR2Sig - '1';
+                    end if;
+                    
+                    coeffAdrSig <= coeffAdrSig + '1';
+                    if coeffAdrSig = "0101" then
+                        state <= READY;
                     end if;
                 when READY =>
-                    present_state <= IDLE;
+                    state <= IDLE;
                     count <= (others => '0');
                     dav <= '1';
             end case;
         end if;
     end process;
-    
-    rst_mac_n <= rst_counter_n;
-    delayLineAdr <= wrAdr;
-    delayLineWrEn <= delayLineWrEnTemp; 
-    delayLineR1 <= adrR1;
-    delayLineR2 <= adrR2;-- to be added for partially parallel FIR filter
+    process(clk)
+    begin
+        if falling_edge(clk) then
+            delayLineWrEn <= wrEnSig;
+            delayLineR2 <= delayLineR2Sig;
+            delayLineR1 <= delayLineR1Sig;
+            delayLineAdr <= delayLineAdrSig;
+            rst_mac_n <= rstSig;
+            coeffAdr <= coeffAdrSig;
+            if delayLineR1Sig = delayLineR2Sig then
+                ctrl_sig <= '1';
+            else 
+                ctrl_sig <= '0';
+            end if;
+        end if;
+    end process;
 end behavioral;
