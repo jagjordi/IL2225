@@ -22,7 +22,7 @@ set_false_path -from {rst_n} -hold
 set_false_path -from {rst_n} -setup
 
 # set saif file
-#read_saif -input ./activity.saif -instance_name tb_fir
+read_saif -input ./activity.saif -instance_name tb_fir
 
 # synthesis
 set_clock_gating_style -sequential_cell latch
