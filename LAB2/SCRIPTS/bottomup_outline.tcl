@@ -63,3 +63,7 @@ write_script > ./MAPPED/FIR_Processor.sdc
 current_design ROM_Process
 write_script > ./MAPPED/ROM_Process.sdc
 
+current_design FIR_Toplevel
+set vp [sizeof [get_timing_path -slack_le 0]]
+puts "Number of violating paths: $vp"
+exit
