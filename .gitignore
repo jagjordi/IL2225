@@ -4,5 +4,6 @@
 ./*
 !*.tcl
 !*.v
+!*.sdc
 !.gitignore
 
